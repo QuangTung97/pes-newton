@@ -170,6 +170,9 @@ func runCommand(cmd *cobra.Command, _ []string) {
 	initSigma := c.bisectSearch()
 	optimal := c.findSigma(initSigma)
 	fmt.Println("Deviation Value =", optimal)
+	fmt.Println("==============================================")
+	fmt.Println("mean_value (x1000) =", muy*1000)
+	fmt.Println("Deviation Value (x1000 & Rounded) =", math.Round(optimal*1000))
 }
 
 func main() {
