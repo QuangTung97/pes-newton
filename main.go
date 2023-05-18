@@ -17,12 +17,12 @@ type config struct {
 	ratio float64
 }
 
-func (c config) propotionAt(x float64, sigma float64) float64 {
+func (c config) proportionAt(x float64, sigma float64) float64 {
 	dx := x - c.muy
 	return math.Exp(-dx * dx / (2.0 * sigma * sigma))
 }
 
-func (c config) propotionAtDerivation(x float64, sigma float64) float64 {
+func (c config) proportionAtDerivation(x float64, sigma float64) float64 {
 	dx := x - c.muy
 	exp := math.Exp(-dx * dx / (2.0 * sigma * sigma))
 	return exp * dx * dx / (sigma * sigma * sigma)
@@ -31,12 +31,12 @@ func (c config) propotionAtDerivation(x float64, sigma float64) float64 {
 func (c config) computeRatio(sigma float64) float64 {
 	sum := 0.0
 	for x := c.min; x <= c.max; x++ {
-		sum += c.propotionAt(float64(x), sigma)
+		sum += c.proportionAt(float64(x), sigma)
 	}
 
 	a := 0.0
 	for x := c.from; x <= c.to; x++ {
-		k := c.propotionAt(float64(x), sigma)
+		k := c.proportionAt(float64(x), sigma)
 		a += k
 	}
 
@@ -47,15 +47,15 @@ func (c config) computeRatioDerivation(sigma float64) float64 {
 	sum := 0.0
 	dsum := 0.0
 	for x := c.min; x <= c.max; x++ {
-		sum += c.propotionAt(float64(x), sigma)
-		dsum += c.propotionAtDerivation(float64(x), sigma)
+		sum += c.proportionAt(float64(x), sigma)
+		dsum += c.proportionAtDerivation(float64(x), sigma)
 	}
 
 	a := 0.0
 	da := 0.0
 	for x := c.from; x <= c.to; x++ {
-		a += c.propotionAt(float64(x), sigma)
-		da += c.propotionAtDerivation(float64(x), sigma)
+		a += c.proportionAt(float64(x), sigma)
+		da += c.proportionAtDerivation(float64(x), sigma)
 	}
 
 	return (da*sum - a*dsum) / (sum * sum)
