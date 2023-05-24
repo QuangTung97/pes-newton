@@ -103,10 +103,10 @@ func (c config) bisectSearch() float64 {
 	return middle(a, b)
 }
 
-func newCommand() *cobra.Command {
+func newSimpleCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "calculate",
-		Run: runCommand,
+		Run: runSimpleCommand,
 	}
 	cmd.Flags().Int("min", 10, "minimum discount")
 	cmd.Flags().Int("max", 30, "maximum discount")
@@ -119,7 +119,7 @@ func newCommand() *cobra.Command {
 	return cmd
 }
 
-func runCommand(cmd *cobra.Command, _ []string) {
+func runSimpleCommand(cmd *cobra.Command, _ []string) {
 	min, err := cmd.Flags().GetInt("min")
 	if err != nil {
 		panic(err)
@@ -175,8 +175,214 @@ func runCommand(cmd *cobra.Command, _ []string) {
 	fmt.Println("Deviation Value (x1000 & Rounded) =", math.Round(optimal*1000))
 }
 
+func newSelectionCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "calculate",
+		Run: runSelectionCommand,
+	}
+	cmd.Flags().Int("min", 10, "minimum discount")
+	cmd.Flags().Int("max", 30, "maximum discount")
+	cmd.Flags().Int(
+		"mode", 0,
+		`mode of random distribution, between 1 and 5:
+	1 = Super Low
+	2 = Low
+	3 = Medium
+	4 = High
+	5 = Super High
+`,
+	)
+
+	return cmd
+}
+
+type randMode int
+
+const (
+	randModeSuperLow = iota + 1
+	randModeLow
+	randModeMedium
+	randModeHigh
+	randModeSuperHigh
+)
+
+func exitWithError(msg string) {
+	fmt.Println("[ERROR]", msg)
+	os.Exit(1)
+}
+
+func roundFloat(v float64) float64 {
+	return math.Round(v*1000) / 1000
+}
+
+type computeResult struct {
+	modeString string
+
+	avg float64
+
+	mean        float64
+	meanFormula string
+
+	from        int
+	fromFormula string
+
+	to        int
+	toFormula string
+
+	ratio float64
+}
+
+func (m randMode) computeMeanValue(min int, max int) computeResult {
+	avg := (float64(min) + float64(max)) / 2
+
+	delta := (float64(max) - float64(min)) / 4.0
+	deltaFormula := "[(max-min)/4]"
+
+	switch m {
+	case randModeSuperLow:
+		return computeResult{
+			modeString: "Super Low",
+			avg:        avg,
+
+			mean:        float64(min),
+			meanFormula: "min",
+
+			from:        min,
+			fromFormula: "min",
+
+			to:        int(float64(min) + delta),
+			toFormula: "min + " + deltaFormula,
+
+			ratio: 95,
+		}
+
+	case randModeLow:
+		return computeResult{
+			modeString: "Low",
+			avg:        avg,
+
+			mean:        avg - delta,
+			meanFormula: "average - " + deltaFormula,
+
+			from:        min,
+			fromFormula: "min",
+
+			to:        int(avg),
+			toFormula: "average",
+
+			ratio: 80,
+		}
+
+	case randModeMedium:
+		return computeResult{
+			modeString: "Medium",
+			avg:        avg,
+
+			mean:        avg,
+			meanFormula: "average",
+
+			from:        int(avg - delta),
+			fromFormula: "average - " + deltaFormula,
+
+			to:        int(avg + delta),
+			toFormula: "average + " + deltaFormula,
+
+			ratio: 70,
+		}
+
+	case randModeHigh:
+		return computeResult{
+			modeString: "High",
+			avg:        avg,
+
+			mean:        avg + delta,
+			meanFormula: "average + " + deltaFormula,
+
+			from:        int(avg),
+			fromFormula: "average",
+
+			to:        max,
+			toFormula: "max",
+
+			ratio: 80,
+		}
+
+	case randModeSuperHigh:
+		return computeResult{
+			modeString: "Super High",
+			avg:        avg,
+
+			mean:        float64(max),
+			meanFormula: "max",
+
+			from:        int(avg + delta),
+			fromFormula: "average + " + deltaFormula,
+
+			to:        max,
+			toFormula: "max",
+
+			ratio: 95,
+		}
+
+	default:
+		exitWithError(`"mode" MUST BE between 1 and 5`)
+		return computeResult{}
+	}
+}
+
+func runSelectionCommand(cmd *cobra.Command, _ []string) {
+	min, err := cmd.Flags().GetInt("min")
+	if err != nil {
+		panic(err)
+	}
+
+	max, err := cmd.Flags().GetInt("max")
+	if err != nil {
+		panic(err)
+	}
+
+	m, err := cmd.Flags().GetInt("mode")
+	if err != nil {
+		panic(err)
+	}
+	mode := randMode(m)
+
+	if mode < randModeSuperLow || mode > randModeSuperHigh {
+	}
+
+	result := mode.computeMeanValue(min, max)
+
+	fmt.Println("min =", min)
+	fmt.Println("max =", max)
+	fmt.Println("mode =", result.modeString)
+	fmt.Println("-----------------------------")
+	fmt.Println("average = (max-min)/2 =", result.avg)
+	fmt.Println("mean_value =", result.meanFormula, "=", result.mean)
+	fmt.Println("from =", result.fromFormula, "=", result.from)
+	fmt.Println("to =", result.toFormula, "=", result.to)
+	fmt.Printf("ratio = %.2f%%\n", result.ratio)
+	fmt.Println("-----------------------------")
+
+	c := config{
+		min: min,
+		max: max,
+		muy: result.mean,
+
+		from:  result.from,
+		to:    result.to,
+		ratio: result.ratio / 100,
+	}
+
+	initSigma := c.bisectSearch()
+	optimal := c.findSigma(initSigma)
+	fmt.Println("Deviation Value =", optimal)
+	fmt.Println("==============================================")
+	fmt.Println("mean_value (x1000 & Rounded) =", result.mean*1000)
+	fmt.Println("Deviation Value (x1000 & Rounded) =", math.Round(optimal*1000))
+}
+
 func main() {
-	cmd := newCommand()
+	cmd := newSelectionCommand()
 	err := cmd.Execute()
 	if err != nil {
 		panic(err)
