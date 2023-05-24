@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"math"
 	"os"
+	"strings"
 )
 
 type config struct {
@@ -182,37 +183,35 @@ func newSelectionCommand() *cobra.Command {
 	}
 	cmd.Flags().Int("min", 10, "minimum discount")
 	cmd.Flags().Int("max", 30, "maximum discount")
-	cmd.Flags().Int(
-		"mode", 0,
-		`mode of random distribution, between 1 and 5:
-	1 = Super Low
-	2 = Low
-	3 = Medium
-	4 = High
-	5 = Super High
-`,
+	cmd.Flags().String(
+		"mode", "",
+		`mode of random distribution, is one of values: `+allModes(),
 	)
 
 	return cmd
 }
 
-type randMode int
+func allModes() string {
+	return strings.Join([]string{
+		randModeSuperLow,
+		randModeLow,
+		randModeMedium,
+		randModeHigh,
+		randModeSuperHigh,
+	}, ", ")
+}
 
 const (
-	randModeSuperLow = iota + 1
-	randModeLow
-	randModeMedium
-	randModeHigh
-	randModeSuperHigh
+	randModeSuperLow  = "super_low"
+	randModeLow       = "low"
+	randModeMedium    = "medium"
+	randModeHigh      = "high"
+	randModeSuperHigh = "super_high"
 )
 
 func exitWithError(msg string) {
 	fmt.Println("[ERROR]", msg)
 	os.Exit(1)
-}
-
-func roundFloat(v float64) float64 {
-	return math.Round(v*1000) / 1000
 }
 
 type computeResult struct {
@@ -232,13 +231,13 @@ type computeResult struct {
 	ratio float64
 }
 
-func (m randMode) computeMeanValue(min int, max int) computeResult {
+func computeMeanValue(randMode string, min int, max int) computeResult {
 	avg := (float64(min) + float64(max)) / 2
 
 	delta := (float64(max) - float64(min)) / 4.0
 	deltaFormula := "[(max-min)/4]"
 
-	switch m {
+	switch randMode {
 	case randModeSuperLow:
 		return computeResult{
 			modeString: "Super Low",
@@ -325,7 +324,7 @@ func (m randMode) computeMeanValue(min int, max int) computeResult {
 		}
 
 	default:
-		exitWithError(`"mode" MUST BE between 1 and 5`)
+		exitWithError(`"mode" MUST BE one of values: ` + allModes())
 		return computeResult{}
 	}
 }
@@ -341,16 +340,12 @@ func runSelectionCommand(cmd *cobra.Command, _ []string) {
 		panic(err)
 	}
 
-	m, err := cmd.Flags().GetInt("mode")
+	mode, err := cmd.Flags().GetString("mode")
 	if err != nil {
 		panic(err)
 	}
-	mode := randMode(m)
 
-	if mode < randModeSuperLow || mode > randModeSuperHigh {
-	}
-
-	result := mode.computeMeanValue(min, max)
+	result := computeMeanValue(mode, min, max)
 
 	fmt.Println("min =", min)
 	fmt.Println("max =", max)
