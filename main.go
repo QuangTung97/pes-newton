@@ -344,6 +344,9 @@ func runSelectionCommand(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		panic(err)
 	}
+	if mode == "" {
+		exitWithError("missing --mode flag, for example: --mode=medium")
+	}
 
 	result := computeMeanValue(mode, min, max)
 
