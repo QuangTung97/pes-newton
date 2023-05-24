@@ -77,10 +77,7 @@ func middle(a, b float64) float64 {
 	return mid
 }
 
-func (c config) bisectSearch() float64 {
-	a := 0.01
-	b := 1000000.0
-
+func (c config) bisectSearchWithBound(a float64, b float64) (float64, bool) {
 	getSign := func(x float64) bool {
 		return math.Signbit(c.computeRatio(x) - c.ratio)
 	}
@@ -88,8 +85,7 @@ func (c config) bisectSearch() float64 {
 	signA := getSign(a)
 	signB := getSign(b)
 	if signA == signB {
-		fmt.Println("[ERROR] CAN NOT find the solution")
-		os.Exit(1)
+		return 0, false
 	}
 
 	for i := 0; i < 20; i++ {
@@ -101,7 +97,26 @@ func (c config) bisectSearch() float64 {
 			b = mid
 		}
 	}
-	return middle(a, b)
+	return middle(a, b), true
+}
+
+func (c config) bisectSearch() float64 {
+	a := 1.0
+	b := 1000.0
+
+	for i := 0; i < 3; i++ {
+		result, ok := c.bisectSearchWithBound(a, b)
+		if ok {
+			return result
+		}
+
+		a /= 10.0
+		b *= 10
+	}
+
+	fmt.Println("[ERROR] CAN NOT find the solution")
+	os.Exit(1)
+	return 0
 }
 
 func newSimpleCommand() *cobra.Command {
