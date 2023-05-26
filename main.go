@@ -267,7 +267,7 @@ func computeMeanValue(randMode string, min int, max int) computeResult {
 			to:        int(float64(min) + delta),
 			toFormula: "min + " + deltaFormula,
 
-			ratio: 95,
+			ratio: 70,
 		}
 
 	case randModeLow:
@@ -284,7 +284,7 @@ func computeMeanValue(randMode string, min int, max int) computeResult {
 			to:        int(avg),
 			toFormula: "average",
 
-			ratio: 80,
+			ratio: 95,
 		}
 
 	case randModeMedium:
@@ -301,7 +301,7 @@ func computeMeanValue(randMode string, min int, max int) computeResult {
 			to:        int(avg + delta),
 			toFormula: "average + " + deltaFormula,
 
-			ratio: 70,
+			ratio: 95,
 		}
 
 	case randModeHigh:
@@ -318,7 +318,7 @@ func computeMeanValue(randMode string, min int, max int) computeResult {
 			to:        max,
 			toFormula: "max",
 
-			ratio: 80,
+			ratio: 95,
 		}
 
 	case randModeSuperHigh:
@@ -335,7 +335,7 @@ func computeMeanValue(randMode string, min int, max int) computeResult {
 			to:        max,
 			toFormula: "max",
 
-			ratio: 95,
+			ratio: 70,
 		}
 
 	default:
